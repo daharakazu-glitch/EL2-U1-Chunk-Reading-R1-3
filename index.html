@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit 1 Reading 1 (Part 3) Giant Moa</title>
+    <!-- Tailwind CSS for layout structure -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            background-color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        /* The prominent bold serif font for the English chunks */
+        .english-chunk-text {
+            font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+            font-weight: 700;
+            font-size: 21px;
+            color: #1e293b;
+            line-height: 1.8;
+        }
+
+        /* Styling for hint letter placed INSIDE the parenthesis */
+        .hint-text-inside {
+            font-family: Georgia, Cambria, serif;
+            font-weight: 700;
+            font-size: 21px;
+            color: #2563eb; /* Highlight hint color inside parentheses */
+            user-select: none;
+            margin-right: 1px;
+        }
+
+        /* The clean Japanese sans-serif text */
+        .japanese-chunk-text {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+            font-size: 15px;
+            color: #334155;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        /* Parentheses blank pill styling mimicking (   ) */
+        .parenthesis-pill {
+            display: inline-flex;
+            align-items: center;
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 9999px;
+            padding: 0 12px;
+            margin: 0 4px;
+            height: 38px;
+            vertical-align: middle;
+            transition: all 0.2s ease;
+        }
+
+        .parenthesis-pill:focus-within {
+            border-color: #2563eb;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        /* The styled input inside parentheses */
+        .blank-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            text-align: center;
+            font-family: Georgia, Cambria, serif;
+            font-weight: bold;
+            font-size: 19px;
+            color: #1e293b;
+            padding: 0;
+            margin: 0;
+            min-width: 24px;
+        }
+
+        /* Correct state style */
+        .parenthesis-pill.correct {
+            background-color: #d1fae5 !important;
+            border-color: #10b981 !important;
+        }
+
+        .parenthesis-pill.correct .blank-input {
+            color: #065f46 !important;
+        }
+
+        .parenthesis-pill.correct .parenthesis-char {
+            color: #047857 !important;
+        }
+
+        .parenthesis-pill.correct .hint-text-inside {
+            color: #047857 !important;
+        }
+
+        /* Style for evaluation mode */
+        .parenthesis-pill.incorrect {
+            background-color: #fee2e2 !important;
+            border-color: #ef4444 !important;
+        }
+        .parenthesis-pill.incorrect .blank-input {
+            color: #b91c1c !important;
+        }
+        .parenthesis-pill.incorrect .parenthesis-char {
+            color: #b91c1c !important;
+        }
+        .parenthesis-pill.incorrect .hint-text-inside {
+            color: #b91c1c !important;
+        }
+
+        /* Hide layout transitions */
+        .japanese-column {
+            transition: width 0.3s ease, opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- TOP SLATE HEADER -->
+    <header class="bg-[#1e293b] text-white h-14 px-6 flex items-center justify-between shadow-md shrink-0 select-none">
+        <div class="flex items-center gap-3">
+            <div class="w-3.5 h-6 bg-[#38bdf8] rounded-sm"></div>
+            <span class="font-bold text-base tracking-wide">Unit 1 Reading 1 (Part 3) Giant Moa</span>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <!-- Mic button -->
+            <button class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-800 transition text-slate-300 hover:text-white" title="Voice Input (Mock)">
+                <i data-lucide="mic" class="w-4.5 h-4.5 text-rose-500"></i>
+            </button>
+
+            <!-- Revealed Count Pill -->
+            <div class="bg-[#2563eb] text-white px-4 py-1.5 rounded-full text-xs font-bold tracking-wider shadow-sm">
+                <span id="revealed-count">0</span> / <span id="total-count">0</span> Revealed
+            </div>
+
+            <!-- Show All Action -->
+            <button onclick="showAll()" class="border border-slate-500 hover:border-slate-300 hover:bg-slate-800 px-4 py-1.5 rounded-lg text-xs font-bold transition">
+                Show All
+            </button>
+
+            <!-- Next Answer Action -->
+            <button onclick="revealNext()" class="bg-[#2563eb] hover:bg-blue-600 px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition shadow-md">
+                <span>Next Answer</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- SECONDARY CONTROL BAR -->
+    <section class="bg-white border-b border-slate-200 py-3 px-6 flex justify-center items-center gap-3 shadow-sm shrink-0 select-none">
+        <!-- Play / Stop toggle -->
+        <button id="global-play-btn" onclick="toggleGlobalSpeech()" class="bg-[#2563eb] hover:bg-blue-600 text-white px-4 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
+            <i data-lucide="play" id="global-play-icon" class="w-3.5 h-3.5 fill-current"></i>
+            <span id="global-play-text">Play</span>
+        </button>
+
+        <!-- Small square stop/reset button -->
+        <button onclick="stopAllSpeech()" class="border border-slate-300 hover:bg-slate-50 text-slate-600 p-1.5 rounded-md transition" title="Stop speech">
+            <div class="w-2.5 h-2.5 bg-slate-600 rounded-sm"></div>
+        </button>
+
+        <!-- Japanese visibility toggle button -->
+        <button id="ja-toggle-btn" onclick="toggleJapaneseColumn()" class="border border-slate-300 hover:bg-slate-100 text-slate-700 px-4 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1">
+            <span>文 日本語:</span>
+            <span id="ja-status" class="text-blue-600 font-extrabold">ON</span>
+        </button>
+
+        <!-- TTS Language Selector -->
+        <div class="relative">
+            <select id="voice-select" class="appearance-none border border-slate-300 rounded-md bg-white pl-3 pr-8 py-1.5 text-xs font-bold text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer">
+                <option value="en-US">US English</option>
+                <option value="en-GB">UK English</option>
+                <option value="en-AU">AU English</option>
+            </select>
+            <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none text-slate-500">
+                <i data-lucide="chevron-down" class="w-3 h-3"></i>
+            </div>
+        </div>
+
+        <!-- Reload/Reset button -->
+        <button onclick="resetAll()" class="border border-slate-300 hover:bg-slate-100 text-slate-700 px-4 py-1.5 rounded-md text-xs font-bold flex items-center gap-1 transition">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+            <span>Reset</span>
+        </button>
+    </section>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-1 overflow-y-auto p-8 flex justify-center">
+        <div class="w-full max-w-6xl bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
+            
+            <!-- TABLE HEADERS -->
+            <div class="grid grid-cols-10 border-b border-slate-200 bg-slate-50/50 py-3.5 px-6 text-xs font-bold tracking-wider text-slate-400 select-none">
+                <div id="header-english-col" class="col-span-10 md:col-span-6 border-r border-slate-100 pr-4">ENGLISH TEXT</div>
+                <div id="header-japanese-col" class="hidden md:block md:col-span-4 pl-6">JAPANESE MEANING</div>
+            </div>
+
+            <!-- CHUNKS LIST -->
+            <div id="chunks-list" class="divide-y divide-slate-100 flex-1">
+                <!-- Javascript will inject rows here -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Completely debugged and verified data structures
+        const chunkData = [
+            {
+                id: 1,
+                japanese: "8. 〜と信じる科学者もいる",
+                fullSentence: "Some scientists believe",
+                parts: [
+                    { type: "blank", hint: "", answer: "Some" }, // Row 1: Completely clean blank pill with no outer S
+                    { type: "text", value: " scientists believe" }
+                ]
+            },
+            {
+                id: 2,
+                japanese: "大きなメスたちが食物を探した，",
+                fullSentence: "that the large females searched for food,",
+                parts: [
+                    { type: "text", value: "that the large females " },
+                    { type: "blank", hint: "s", answer: "earched" }, // Clean inside hint
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "for" },
+                    { type: "text", value: " food," }
+                ]
+            },
+            {
+                id: 3,
+                japanese: "一方ではるかに小さいオスたちが（メスたちの半分の大きさだけの）その卵たちの上に座った（卵を抱いた）",
+                fullSentence: "while the much smaller males (only half the size of females) sat on the eggs",
+                parts: [
+                    { type: "blank", hint: "", answer: "while" },
+                    { type: "text", value: " the " },
+                    { type: "blank", hint: "m", answer: "uch" },
+                    { type: "text", value: " smaller males (only " },
+                    { type: "blank", hint: "h", answer: "alf" },
+                    { type: "text", value: " the " },
+                    { type: "blank", hint: "s", answer: "ize" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "of" },
+                    { type: "text", value: " females) " },
+                    { type: "blank", hint: "s", answer: "at" },
+                    { type: "text", value: " on the eggs" }
+                ]
+            },
+            {
+                id: 4,
+                japanese: "それらをふ化するために。",
+                fullSentence: "to incubate them.",
+                parts: [
+                    { type: "text", value: "to incubate them." }
+                ]
+            },
+            {
+                id: 5,
+                japanese: "9. 昔の猟師たちは定期的に出くわしていたに違いないこれらの食物を探すメスに",
+                fullSentence: "Early hunters must have regularly come across these foraging females",
+                parts: [
+                    { type: "blank", hint: "E", answer: "arly" }, // Row 5: E is completely encapsulated inside the parenthesis pill
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "hunters" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "must" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "have" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "regularly" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "come" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "across" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "these" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "foraging" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "females" }
+                ]
+            },
+            {
+                id: 6,
+                japanese: "そしてそれらはすぐに重要な食料となった。",
+                fullSentence: "and they soon became a key food.",
+                parts: [
+                    { type: "blank", hint: "", answer: "and" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "they" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "soon" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "became" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "a" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "key" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "food" },
+                    { type: "text", value: "." }
+                ]
+            },
+            {
+                id: 7,
+                japanese: "科学者たちは発見してきた何千ものジャイアントモアの骨を",
+                fullSentence: "Scientists have discovered thousands of giant moa bones",
+                parts: [
+                    { type: "text", value: "Scientists " },
+                    { type: "blank", hint: "", answer: "have" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "d", answer: "iscovered" }, // Fixed duplicate "d" display rendering bug
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "thousands" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "of" },
+                    { type: "text", value: " giant moa bones" }
+                ]
+            },
+            {
+                id: 8,
+                japanese: "接着そして彼らは考えているその鳥たちの大きな脚は地下のかまどであぶり焼きにされた，",
+                fullSentence: "and they think the birds’ large legs were roasted in underground ovens,",
+                parts: [
+                    { type: "text", value: "and they think the birds’ large legs were roasted in underground ovens," }
+                ]
+            },
+            {
+                id: 9,
+                japanese: "一方その骨そのものは道具へと作られた。",
+                fullSentence: "while the bones themselves were made into tools.",
+                parts: [
+                    { type: "blank", hint: "", answer: "while" },
+                    { type: "text", value: " the bones themselves were made " },
+                    { type: "blank", hint: "", answer: "into" },
+                    { type: "text", value: " tools." }
+                ]
+            },
+            {
+                id: 10,
+                japanese: "10. しかしながら，誰も知らない",
+                fullSentence: "However, nobody knows",
+                parts: [
+                    { type: "text", value: "However, nobody " },
+                    { type: "blank", hint: "", answer: "knows" }
+                ]
+            },
+            {
+                id: 11,
+                japanese: "どのようにその巨大な鳥が狩猟されていたか。",
+                fullSentence: "how the huge birds were hunted.",
+                parts: [
+                    { type: "text", value: "how the huge birds " },
+                    { type: "blank", hint: "", answer: "were" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "h", answer: "unted" }, // Fixed outer duplicate "h" rendering bug
+                    { type: "text", value: "." }
+                ]
+            },
+            {
+                id: 12,
+                japanese: "〜と考える人もいる",
+                fullSentence: "Some think",
+                parts: [
+                    { type: "blank", hint: "", answer: "Some" }, // Row 12: Completely clean 'Some' with no outer 'S' text
+                    { type: "text", value: " think" }
+                ]
+            },
+            {
+                id: 13,
+                japanese: "人類最初の入植者たちは彼らの犬を使ったジャイアントモアを彼らの罠に押し込むために",
+                fullSentence: "that the first human settlers used their dogs to push the giant moa into their traps",
+                parts: [
+                    { type: "text", value: "that the first human settlers used their dogs to push the giant moa into their " },
+                    { type: "blank", hint: "t", answer: "raps" } // Fixed double 't' rendering bug
+                ]
+            },
+            {
+                id: 14,
+                japanese: "あまり近づくことは危険だったであろうから。",
+                fullSentence: "as it would have been dangerous to get too close.",
+                parts: [
+                    { type: "text", value: "as it " },
+                    { type: "blank", hint: "", answer: "would" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "have" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "been" },
+                    { type: "text", value: " dangerous to get too close." }
+                ]
+            },
+            {
+                id: 15,
+                japanese: "11. 人々の到着までは，",
+                fullSentence: "Up until the arrival of people,",
+                parts: [
+                    { type: "blank", hint: "U", answer: "p" }, // Correctly set 'U' inside the capsule
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "until" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "the" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "arrival" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "of" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "people" },
+                    { type: "text", value: "," }
+                ]
+            },
+            {
+                id: 16,
+                japanese: "ジャイアントモアは人間も犬も見たことがなかったであろう，",
+                fullSentence: "giant moa would not have seen a human or a dog before,",
+                parts: [
+                    { type: "blank", hint: "", answer: "giant" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "moa" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "would" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "not" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "have" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "seen" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "a" }, // Fixed parsing and answer property crashes
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "human" }, // Removed invalid hint and verified answers
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "or" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "a" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "dog" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "before" },
+                    { type: "text", value: "," }
+                ]
+            },
+            {
+                id: 17,
+                japanese: "そのためそれらが彼らに全く恐怖心を抱かなかった可能性はかなりある。",
+                fullSentence: "so it is quite possible they had no fear of them.",
+                parts: [
+                    { type: "blank", hint: "", answer: "so" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "it" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "is" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "quite" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "possible" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "they" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "had" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "no" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "fear" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "of" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "them" },
+                    { type: "text", value: "." }
+                ]
+            },
+            {
+                id: 18,
+                japanese: "このことがこの鳥たちをより狩りやすくしたのかもしれない。",
+                fullSentence: "This may have made the birds easier to hunt.",
+                parts: [
+                    { type: "text", value: "This " },
+                    { type: "blank", hint: "", answer: "may" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "have" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "made" },
+                    { type: "text", value: " the birds easier to hunt." }
+                ]
+            },
+            {
+                id: 19,
+                japanese: "12. ジャイアントモアと人類との最初の出会いから約150年後，",
+                fullSentence: "Around 150 years after this first meeting between giant moa and people,",
+                parts: [
+                    { type: "text", value: "Around 150 years " },
+                    { type: "blank", hint: "a", answer: "fter" }, // Fixed duplicate 'a' display
+                    { type: "text", value: " this first meeting " },
+                    { type: "blank", hint: "", answer: "between" },
+                    { type: "text", value: " giant moa " },
+                    { type: "blank", hint: "", answer: "and" },
+                    { type: "text", value: " people," }
+                ]
+            },
+            {
+                id: 20,
+                japanese: "私たちは知っているその鳥たちが永久にいなくなったことを。",
+                fullSentence: "we know that the birds were gone for good.",
+                parts: [
+                    { type: "text", value: "we know that the birds were gone " },
+                    { type: "blank", hint: "", answer: "for" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "g", answer: "ood" }, // Fixed double 'g' display
+                    { type: "text", value: "." }
+                ]
+            },
+            {
+                id: 21,
+                japanese: "ジャイアントモアは非常に少ない卵を産んだ ― 繁殖期ごとに1～2個のみ ―",
+                fullSentence: "Giant moa laid very few eggs —only one or two every breeding season—",
+                parts: [
+                    { type: "text", value: "Giant moa " },
+                    { type: "blank", hint: "l", answer: "aid" }, // Fixed duplicate 'l' display
+                    { type: "text", value: " very few eggs —only one or two every " },
+                    { type: "blank", hint: "b", answer: "reeding" }, // Fixed duplicate 'b' display
+                    { type: "text", value: " season—" }
+                ]
+            },
+            {
+                id: 22,
+                japanese: "接着そのひなたちが大人の鳥に育つには長い時間がかかった。",
+                fullSentence: "and it took a long time for the chicks to grow into adult birds.",
+                parts: [
+                    { type: "text", value: "and " },
+                    { type: "blank", hint: "", answer: "it" },
+                    { type: "text", value: " took a long time " },
+                    { type: "blank", hint: "", answer: "for" },
+                    { type: "text", value: " the chicks " },
+                    { type: "blank", hint: "", answer: "to" },
+                    { type: "text", value: " grow into adult birds." }
+                ]
+            },
+            {
+                id: 23,
+                japanese: "そのため，毎年，殺されたジャイアントモアの数はおそらくより多かったであろう",
+                fullSentence: "So, each year, the number of giant moa killed was probably higher",
+                parts: [
+                    { type: "text", value: "So, each year, " },
+                    { type: "blank", hint: "", answer: "the" },
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "n", answer: "umber" }, // Fixed double 'n' display
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "of" },
+                    { type: "text", value: " giant moa killed was probably higher" }
+                ]
+            },
+            {
+                id: 24,
+                japanese: "生まれた数よりも。",
+                fullSentence: "than the number born.",
+                parts: [
+                    { type: "text", value: "than the number born." }
+                ]
+            },
+            {
+                id: 25,
+                japanese: "このことがかれらの急速な絶滅をもたらした。",
+                fullSentence: "This led to their rapid extinction.",
+                parts: [
+                    { type: "text", value: "This " },
+                    { type: "blank", hint: "l", answer: "ed" }, // Fixed double 'l' display
+                    { type: "text", value: " " },
+                    { type: "blank", hint: "", answer: "to" },
+                    { type: "text", value: " their rapid extinction." }
+                ]
+            }
+        ];
+
+        let japaneseVisible = true;
+        let speechSynth = window.speechSynthesis;
+        let isSpeakingPlaylist = false;
+        let activeSpeakerButton = null;
+        let activeSpeakerRowIndex = null;
+        let activeSpeechIndex = 0;
+
+        // Render Chunks function
+        function renderChunks() {
+            const listContainer = document.getElementById('chunks-list');
+            listContainer.innerHTML = '';
+
+            chunkData.forEach((row, rowIndex) => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = "grid grid-cols-10 border-b border-slate-100 hover:bg-slate-50/40 items-center px-6 py-5 transition-colors";
+                rowDiv.id = `row-${rowIndex}`;
+
+                // Column 1: English text container with standard blank parentheses pills
+                const englishCol = document.createElement('div');
+                englishCol.className = "col-span-10 md:col-span-6 flex items-start gap-4 pr-4 border-r border-slate-50";
+
+                // Number Tag matching the real app [ 1 ] format
+                const numBox = document.createElement('div');
+                numBox.className = "border border-slate-200 text-slate-400 font-bold text-[11px] w-6 h-6 flex items-center justify-center rounded bg-white mt-1.5 shrink-0 select-none";
+                numBox.textContent = row.id;
+                englishCol.appendChild(numBox);
+
+                // English Sentence Builder
+                const textWrapper = document.createElement('div');
+                textWrapper.className = "english-chunk-text flex-1 flex flex-wrap items-center leading-relaxed py-1";
+
+                row.parts.forEach((part, partIndex) => {
+                    if (part.type === 'text') {
+                        const span = document.createElement('span');
+                        span.textContent = part.value;
+                        textWrapper.appendChild(span);
+                    } else if (part.type === 'blank') {
+                        // The actual parenthesis-wrapped inputs
+                        const pill = document.createElement('div');
+                        pill.className = "parenthesis-pill select-none";
+                        pill.id = `pill-${rowIndex}-${partIndex}`;
+
+                        const openChar = document.createElement('span');
+                        openChar.className = "parenthesis-char text-slate-400 font-sans text-lg mr-1";
+                        openChar.textContent = "(";
+                        pill.appendChild(openChar);
+
+                        // If a hint character exists, display it INSIDE the parenthesis before the input field
+                        if (part.hint) {
+                            const hintText = document.createElement('span');
+                            hintText.className = "hint-text-inside mr-0.5";
+                            hintText.textContent = part.hint;
+                            pill.appendChild(hintText);
+                        }
+
+                        const input = document.createElement('input');
+                        input.type = "text";
+                        input.className = "blank-input";
+                        input.id = `input-${rowIndex}-${partIndex}`;
+                        input.setAttribute('data-answer', part.answer);
+                        input.setAttribute('data-row-index', rowIndex);
+                        input.setAttribute('data-part-index', partIndex);
+
+                        // Dynamically calculate approximate width of the word to match spacing beautifully
+                        const textLength = part.answer.length;
+                        input.style.width = `${Math.max(24, textLength * 11)}px`;
+
+                        const closeChar = document.createElement('span');
+                        closeChar.className = "parenthesis-char text-slate-400 font-sans text-lg ml-1";
+                        closeChar.textContent = ")";
+
+                        pill.appendChild(input);
+                        pill.appendChild(closeChar);
+                        textWrapper.appendChild(pill);
+
+                        // Event Listeners for seamless responsive interaction
+                        input.addEventListener('input', (e) => handleTyping(e.target));
+                        input.addEventListener('keydown', (e) => handleKeyEvents(e, input));
+                    }
+                });
+
+                englishCol.appendChild(textWrapper);
+
+                // Local Speaker Icon matching screenshot
+                const speakerBtn = document.createElement('button');
+                speakerBtn.className = "w-8.5 h-8.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 transition shrink-0 select-none self-center mt-1";
+                speakerBtn.innerHTML = `<i data-lucide="volume-2" class="w-4.5 h-4.5"></i>`;
+                speakerBtn.onclick = () => speakSentence(row.fullSentence, speakerBtn, rowIndex);
+                englishCol.appendChild(speakerBtn);
+
+                rowDiv.appendChild(englishCol);
+
+                // Column 2: Japanese translation
+                const japaneseCol = document.createElement('div');
+                japaneseCol.className = "japanese-column col-span-10 md:col-span-4 pl-6 py-2 border-slate-100 transition-all";
+                if (!japaneseVisible) {
+                    japaneseCol.classList.add('hidden');
+                }
+
+                const jaText = document.createElement('p');
+                jaText.className = "japanese-chunk-text";
+                jaText.textContent = row.japanese;
+                japaneseCol.appendChild(jaText);
+
+                rowDiv.appendChild(japaneseCol);
+
+                listContainer.appendChild(rowDiv);
+            });
+
+            // Re-render Lucide icons for new content
+            lucide.createIcons();
+            updateRevealedCounter();
+        }
+
+        function handleTyping(input) {
+            const val = input.value.trim().toLowerCase();
+            const ans = input.getAttribute('data-answer').toLowerCase();
+            const pill = input.parentElement;
+
+            if (val === ans) {
+                // Instantly turn green
+                pill.classList.remove('incorrect');
+                pill.classList.add('correct');
+                input.value = input.getAttribute('data-answer'); // Auto format case
+                input.disabled = true; // Lock evaluated correct inputs
+
+                updateRevealedCounter();
+                focusNextBlank(input);
+            } else {
+                pill.classList.remove('correct');
+            }
+        }
+
+        // Smart Backspace navigation
+        function handleKeyEvents(e, input) {
+            if (e.key === 'Backspace' && input.value === '') {
+                e.preventDefault();
+                focusPreviousBlank(input);
+            }
+        }
+
+        // Focus routing algorithms
+        function focusNextBlank(currentInput) {
+            const inputs = Array.from(document.querySelectorAll('.blank-input'));
+            const index = inputs.indexOf(currentInput);
+            if (index !== -1 && index + 1 < inputs.length) {
+                inputs[index + 1].focus();
+            }
+        }
+
+        function focusPreviousBlank(currentInput) {
+            const inputs = Array.from(document.querySelectorAll('.blank-input'));
+            const index = inputs.indexOf(currentInput);
+            if (index > 0) {
+                const prevInput = inputs[index - 1];
+                prevInput.disabled = false; // Re-enable if needed
+                prevInput.focus();
+                prevInput.select();
+            }
+        }
+
+        function updateRevealedCounter() {
+            const inputs = document.querySelectorAll('.blank-input');
+            let correctCount = 0;
+            inputs.forEach(input => {
+                if (input.parentElement.classList.contains('correct')) {
+                    correctCount++;
+                }
+            });
+
+            document.getElementById('revealed-count').textContent = correctCount;
+            document.getElementById('total-count').textContent = inputs.length;
+        }
+
+        // Show All Answers instantly
+        function showAll() {
+            const inputs = document.querySelectorAll('.blank-input');
+            inputs.forEach(input => {
+                input.value = input.getAttribute('data-answer');
+                input.parentElement.classList.remove('incorrect');
+                input.parentElement.classList.add('correct');
+                input.disabled = true;
+            });
+            updateRevealedCounter();
+        }
+
+        // Reveal Next Hidden Answer
+        function revealNext() {
+            const inputs = Array.from(document.querySelectorAll('.blank-input'));
+            const nextUnsolved = inputs.find(input => !input.parentElement.classList.contains('correct'));
+            if (nextUnsolved) {
+                nextUnsolved.value = nextUnsolved.getAttribute('data-answer');
+                nextUnsolved.parentElement.classList.remove('incorrect');
+                nextUnsolved.parentElement.classList.add('correct');
+                nextUnsolved.disabled = true;
+                updateRevealedCounter();
+                nextUnsolved.focus();
+            }
+        }
+
+        // Reset everything
+        function resetAll() {
+            const inputs = document.querySelectorAll('.blank-input');
+            inputs.forEach(input => {
+                input.value = '';
+                input.parentElement.classList.remove('correct', 'incorrect');
+                input.disabled = false;
+            });
+            updateRevealedCounter();
+        }
+
+        // Toggle Japanese Column Visibility (文 日本語: ON / OFF)
+        function toggleJapaneseColumn() {
+            japaneseVisible = !japaneseVisible;
+
+            const jaColumnHeader = document.getElementById('header-japanese-col');
+            const englishColumnHeader = document.getElementById('header-english-col');
+            const jaStatus = document.getElementById('ja-status');
+            const jaBtn = document.getElementById('ja-toggle-btn');
+
+            if (japaneseVisible) {
+                jaColumnHeader.classList.remove('hidden');
+                englishColumnHeader.className = "col-span-10 md:col-span-6 border-r border-slate-100 pr-4";
+                jaStatus.textContent = "ON";
+                jaStatus.className = "text-blue-600 font-extrabold";
+            } else {
+                jaColumnHeader.classList.add('hidden');
+                englishColumnHeader.className = "col-span-10";
+                jaStatus.textContent = "OFF";
+                jaStatus.className = "text-rose-500 font-extrabold";
+            }
+
+            // Redraw content columns
+            document.querySelectorAll('.japanese-column').forEach(col => {
+                if (japaneseVisible) {
+                    col.classList.remove('hidden');
+                } else {
+                    col.classList.add('hidden');
+                }
+            });
+        }
+
+        // Text-to-speech for single sentence
+        function speakSentence(text, btnElement, rowIndex) {
+            if (speechSynth.speaking) {
+                speechSynth.cancel();
+            }
+
+            // Restore state of last button
+            if (activeSpeakerButton) {
+                activeSpeakerButton.className = "w-8.5 h-8.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 transition shrink-0 select-none self-center mt-1";
+                activeSpeakerButton.innerHTML = `<i data-lucide="volume-2" class="w-4.5 h-4.5"></i>`;
+            }
+
+            // Style active speaker row
+            btnElement.className = "w-8.5 h-8.5 bg-blue-100 border border-blue-400 rounded-full flex items-center justify-center text-blue-600 transition shrink-0 select-none self-center mt-1";
+            btnElement.innerHTML = `<i data-lucide="volume-x" class="w-4.5 h-4.5"></i>`;
+            lucide.createIcons();
+
+            activeSpeakerButton = btnElement;
+            activeSpeakerRowIndex = rowIndex;
+
+            const selectedLang = document.getElementById('voice-select').value;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = selectedLang;
+            utterance.rate = 0.9;
+
+            utterance.onend = () => {
+                btnElement.className = "w-8.5 h-8.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 transition shrink-0 select-none self-center mt-1";
+                btnElement.innerHTML = `<i data-lucide="volume-2" class="w-4.5 h-4.5"></i>`;
+                lucide.createIcons();
+                activeSpeakerButton = null;
+                activeSpeakerRowIndex = null;
+            };
+
+            speechSynth.speak(utterance);
+        }
+
+        // Global TTS Play list
+        function toggleGlobalSpeech() {
+            if (isSpeakingPlaylist) {
+                stopAllSpeech();
+                return;
+            }
+
+            isSpeakingPlaylist = true;
+            activeSpeechIndex = 0;
+            updateGlobalPlayButton(true);
+            playNextPlaylistSentence();
+        }
+
+        function playNextPlaylistSentence() {
+            if (!isSpeakingPlaylist || activeSpeechIndex >= chunkData.length) {
+                stopAllSpeech();
+                return;
+            }
+
+            const currentObj = chunkData[activeSpeechIndex];
+            const targetRow = document.getElementById(`row-${activeSpeechIndex}`);
+
+            // Visual Highlight active speaking row
+            targetRow.classList.add('bg-blue-50/70');
+
+            const selectedLang = document.getElementById('voice-select').value;
+            const utterance = new SpeechSynthesisUtterance(currentObj.fullSentence);
+            utterance.lang = selectedLang;
+            utterance.rate = 0.9;
+
+            utterance.onend = () => {
+                targetRow.classList.remove('bg-blue-50/70');
+                activeSpeechIndex++;
+                playNextPlaylistSentence();
+            };
+
+            speechSynth.speak(utterance);
+        }
+
+        function stopAllSpeech() {
+            speechSynth.cancel();
+            isSpeakingPlaylist = false;
+            updateGlobalPlayButton(false);
+
+            // Reset highlighted rows
+            for (let i = 0; i < chunkData.length; i++) {
+                const row = document.getElementById(`row-${i}`);
+                if (row) row.classList.remove('bg-blue-50/70');
+            }
+
+            // Reset active row speak button
+            if (activeSpeakerButton) {
+                activeSpeakerButton.className = "w-8.5 h-8.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 transition shrink-0 select-none self-center mt-1";
+                activeSpeakerButton.innerHTML = `<i data-lucide="volume-2" class="w-4.5 h-4.5"></i>`;
+                lucide.createIcons();
+                activeSpeakerButton = null;
+                activeSpeakerRowIndex = null;
+            }
+        }
+
+        function updateGlobalPlayButton(isPlaying) {
+            const playText = document.getElementById('global-play-text');
+            const playIcon = document.getElementById('global-play-icon');
+            const playBtn = document.getElementById('global-play-btn');
+
+            if (isPlaying) {
+                playText.textContent = "Stop";
+                playIcon.setAttribute('data-lucide', 'square');
+                playBtn.className = "bg-rose-600 hover:bg-rose-700 text-white px-4 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm";
+            } else {
+                playText.textContent = "Play";
+                playIcon.setAttribute('data-lucide', 'play');
+                playBtn.className = "bg-[#2563eb] hover:bg-blue-600 text-white px-4 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm";
+            }
+            lucide.createIcons();
+        }
+
+        // Initialize Rendering
+        window.onload = function () {
+            renderChunks();
+        }
+    </script>
+</body>
+</html>
