@@ -54,27 +54,18 @@
             height: 38px;
             vertical-align: middle;
             transition: all 0.2s ease;
+            cursor: pointer;
         }
 
-        .parenthesis-pill:focus-within {
+        .parenthesis-pill:hover {
+            background-color: #e2e8f0;
+        }
+
+        .parenthesis-pill:focus {
+            outline: none;
             border-color: #2563eb;
             background-color: #ffffff;
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-        }
-
-        /* The styled input inside parentheses */
-        .blank-input {
-            background: transparent;
-            border: none;
-            outline: none;
-            text-align: center;
-            font-family: Georgia, Cambria, serif;
-            font-weight: bold;
-            font-size: 19px;
-            color: #1e293b;
-            padding: 0;
-            margin: 0;
-            min-width: 24px;
         }
 
         /* Correct state style */
@@ -83,31 +74,8 @@
             border-color: #10b981 !important;
         }
 
-        .parenthesis-pill.correct .blank-input {
-            color: #065f46 !important;
-        }
-
-        .parenthesis-pill.correct .parenthesis-char {
-            color: #047857 !important;
-        }
-
-        .parenthesis-pill.correct .hint-text-inside {
-            color: #047857 !important;
-        }
-
-        /* Style for evaluation mode */
-        .parenthesis-pill.incorrect {
-            background-color: #fee2e2 !important;
-            border-color: #ef4444 !important;
-        }
-        .parenthesis-pill.incorrect .blank-input {
-            color: #b91c1c !important;
-        }
-        .parenthesis-pill.incorrect .parenthesis-char {
-            color: #b91c1c !important;
-        }
-        .parenthesis-pill.incorrect .hint-text-inside {
-            color: #b91c1c !important;
+        .parenthesis-pill.correct:hover {
+            background-color: #a7f3d0 !important;
         }
 
         /* Hide layout transitions */
@@ -203,6 +171,34 @@
             </div>
         </div>
     </main>
+
+    <!-- お祝いポップアップ (全開示完了時) -->
+    <div id="congratsModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+      <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-slate-200">
+        <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="check" class="w-10 h-10 stroke-[3]"></i>
+        </div>
+        <h3 class="text-2xl font-black text-slate-800">Perfect Score!</h3>
+        <p class="text-sm text-slate-500 mt-2 leading-relaxed">
+          おめでとうございます！<br />
+          Part 3 (繁殖と絶滅) のすべての空欄を開示できました！
+        </p>
+        <div class="mt-6 flex flex-col gap-2">
+          <button 
+            onclick="resetAll()"
+            class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors w-full"
+          >
+            もう一度挑戦
+          </button>
+          <button 
+            onclick="closeCongratsModal()"
+            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-colors shadow-md shadow-blue-100 w-full"
+          >
+            閉じる
+          </button>
+        </div>
+      </div>
+    </div>
 
     <script>
         // Completely debugged and verified data structures
@@ -578,6 +574,26 @@
         let activeSpeakerRowIndex = null;
         let activeSpeechIndex = 0;
 
+        const state = {
+            revealedIds: new Set()
+        };
+
+        // Extract all blanks dynamically
+        const ALL_BLANKS = [];
+        chunkData.forEach((row, rowIndex) => {
+            row.parts.forEach((part, partIndex) => {
+                if (part.type === 'blank') {
+                    ALL_BLANKS.push({
+                        id: `${rowIndex}-${partIndex}`,
+                        rowIndex: rowIndex,
+                        partIndex: partIndex,
+                        answer: part.answer,
+                        hint: part.hint
+                    });
+                }
+            });
+        });
+
         // Render Chunks function
         function renderChunks() {
             const listContainer = document.getElementById('chunks-list');
@@ -608,47 +624,47 @@
                         span.textContent = part.value;
                         textWrapper.appendChild(span);
                     } else if (part.type === 'blank') {
-                        // The actual parenthesis-wrapped inputs
-                        const pill = document.createElement('div');
-                        pill.className = "parenthesis-pill select-none";
+                        const wordId = `${rowIndex}-${partIndex}`;
+                        const isRevealed = state.revealedIds.has(wordId);
+
+                        // The actual parenthesis-wrapped button
+                        const pill = document.createElement('button');
+                        pill.className = `parenthesis-pill select-none cursor-pointer hover:bg-slate-200 transition-all ${isRevealed ? 'correct' : ''}`;
                         pill.id = `pill-${rowIndex}-${partIndex}`;
+                        pill.onclick = () => handleWordClick(rowIndex, partIndex);
+                        pill.setAttribute('title', isRevealed ? 'クリックして隠す' : 'クリックして開く');
 
                         const openChar = document.createElement('span');
-                        openChar.className = "parenthesis-char text-slate-400 font-sans text-lg mr-1";
+                        openChar.className = `parenthesis-char font-sans text-lg mr-1 ${isRevealed ? 'text-emerald-700' : 'text-slate-400'}`;
                         openChar.textContent = "(";
                         pill.appendChild(openChar);
 
-                        // If a hint character exists, display it INSIDE the parenthesis before the input field
+                        // If a hint character exists, display it INSIDE the parenthesis before the word/blank
                         if (part.hint) {
                             const hintText = document.createElement('span');
-                            hintText.className = "hint-text-inside mr-0.5";
+                            hintText.className = `hint-text-inside mr-0.5 ${isRevealed ? 'text-emerald-700' : ''}`;
                             hintText.textContent = part.hint;
                             pill.appendChild(hintText);
                         }
 
-                        const input = document.createElement('input');
-                        input.type = "text";
-                        input.className = "blank-input";
-                        input.id = `input-${rowIndex}-${partIndex}`;
-                        input.setAttribute('data-answer', part.answer);
-                        input.setAttribute('data-row-index', rowIndex);
-                        input.setAttribute('data-part-index', partIndex);
-
-                        // Dynamically calculate approximate width of the word to match spacing beautifully
-                        const textLength = part.answer.length;
-                        input.style.width = `${Math.max(24, textLength * 11)}px`;
+                        // Answer text or spacing
+                        const ansSpan = document.createElement('span');
+                        ansSpan.className = `font-times font-bold text-[19px] ${isRevealed ? 'text-emerald-800' : 'text-slate-400'}`;
+                        if (isRevealed) {
+                            ansSpan.textContent = part.answer;
+                        } else {
+                            // Render blank space corresponding to answer length (like full-width spaces)
+                            const spacesCount = Math.max(1, Math.floor(part.answer.length * 0.8));
+                            ansSpan.textContent = "　".repeat(spacesCount);
+                        }
+                        pill.appendChild(ansSpan);
 
                         const closeChar = document.createElement('span');
-                        closeChar.className = "parenthesis-char text-slate-400 font-sans text-lg ml-1";
+                        closeChar.className = `parenthesis-char font-sans text-lg ml-1 ${isRevealed ? 'text-emerald-700' : 'text-slate-400'}`;
                         closeChar.textContent = ")";
-
-                        pill.appendChild(input);
                         pill.appendChild(closeChar);
-                        textWrapper.appendChild(pill);
 
-                        // Event Listeners for seamless responsive interaction
-                        input.addEventListener('input', (e) => handleTyping(e.target));
-                        input.addEventListener('keydown', (e) => handleKeyEvents(e, input));
+                        textWrapper.appendChild(pill);
                     }
                 });
 
@@ -683,104 +699,59 @@
             // Re-render Lucide icons for new content
             lucide.createIcons();
             updateRevealedCounter();
-        }
 
-        function handleTyping(input) {
-            const val = input.value.trim().toLowerCase();
-            const ans = input.getAttribute('data-answer').toLowerCase();
-            const pill = input.parentElement;
-
-            if (val === ans) {
-                // Instantly turn green
-                pill.classList.remove('incorrect');
-                pill.classList.add('correct');
-                input.value = input.getAttribute('data-answer'); // Auto format case
-                input.disabled = true; // Lock evaluated correct inputs
-
-                updateRevealedCounter();
-                focusNextBlank(input);
+            // Perfect Score Check
+            if (state.revealedIds.size === ALL_BLANKS.length && ALL_BLANKS.length > 0) {
+                document.getElementById('congratsModal').classList.remove('hidden');
             } else {
-                pill.classList.remove('correct');
+                document.getElementById('congratsModal').classList.add('hidden');
             }
         }
 
-        // Smart Backspace navigation
-        function handleKeyEvents(e, input) {
-            if (e.key === 'Backspace' && input.value === '') {
-                e.preventDefault();
-                focusPreviousBlank(input);
+        // Handle word click (reveal toggle)
+        window.handleWordClick = function(rowIndex, partIndex) {
+            const wordId = `${rowIndex}-${partIndex}`;
+            if (state.revealedIds.has(wordId)) {
+                state.revealedIds.delete(wordId);
+            } else {
+                state.revealedIds.add(wordId);
             }
-        }
-
-        // Focus routing algorithms
-        function focusNextBlank(currentInput) {
-            const inputs = Array.from(document.querySelectorAll('.blank-input'));
-            const index = inputs.indexOf(currentInput);
-            if (index !== -1 && index + 1 < inputs.length) {
-                inputs[index + 1].focus();
-            }
-        }
-
-        function focusPreviousBlank(currentInput) {
-            const inputs = Array.from(document.querySelectorAll('.blank-input'));
-            const index = inputs.indexOf(currentInput);
-            if (index > 0) {
-                const prevInput = inputs[index - 1];
-                prevInput.disabled = false; // Re-enable if needed
-                prevInput.focus();
-                prevInput.select();
-            }
-        }
+            renderChunks();
+        };
 
         function updateRevealedCounter() {
-            const inputs = document.querySelectorAll('.blank-input');
-            let correctCount = 0;
-            inputs.forEach(input => {
-                if (input.parentElement.classList.contains('correct')) {
-                    correctCount++;
-                }
-            });
-
-            document.getElementById('revealed-count').textContent = correctCount;
-            document.getElementById('total-count').textContent = inputs.length;
+            document.getElementById('revealed-count').textContent = state.revealedIds.size;
+            document.getElementById('total-count').textContent = ALL_BLANKS.length;
         }
 
         // Show All Answers instantly
         function showAll() {
-            const inputs = document.querySelectorAll('.blank-input');
-            inputs.forEach(input => {
-                input.value = input.getAttribute('data-answer');
-                input.parentElement.classList.remove('incorrect');
-                input.parentElement.classList.add('correct');
-                input.disabled = true;
-            });
-            updateRevealedCounter();
+            ALL_BLANKS.forEach(w => state.revealedIds.add(w.id));
+            renderChunks();
         }
 
         // Reveal Next Hidden Answer
         function revealNext() {
-            const inputs = Array.from(document.querySelectorAll('.blank-input'));
-            const nextUnsolved = inputs.find(input => !input.parentElement.classList.contains('correct'));
-            if (nextUnsolved) {
-                nextUnsolved.value = nextUnsolved.getAttribute('data-answer');
-                nextUnsolved.parentElement.classList.remove('incorrect');
-                nextUnsolved.parentElement.classList.add('correct');
-                nextUnsolved.disabled = true;
-                updateRevealedCounter();
-                nextUnsolved.focus();
+            const nextBlank = ALL_BLANKS.find(w => !state.revealedIds.has(w.id));
+            if (nextBlank) {
+                state.revealedIds.add(nextBlank.id);
+                renderChunks();
+                const btn = document.getElementById(`pill-${nextBlank.rowIndex}-${nextBlank.partIndex}`);
+                if (btn) btn.focus();
             }
         }
 
         // Reset everything
         function resetAll() {
-            const inputs = document.querySelectorAll('.blank-input');
-            inputs.forEach(input => {
-                input.value = '';
-                input.parentElement.classList.remove('correct', 'incorrect');
-                input.disabled = false;
-            });
-            updateRevealedCounter();
+            state.revealedIds.clear();
+            stopAllSpeech();
+            renderChunks();
         }
+
+        // Close congrats modal
+        window.closeCongratsModal = function() {
+            document.getElementById('congratsModal').classList.add('hidden');
+        };
 
         // Toggle Japanese Column Visibility (文 日本語: ON / OFF)
         function toggleJapaneseColumn() {
@@ -862,6 +833,7 @@
             playNextPlaylistSentence();
         }
 
+        // Play next playlist sentence
         function playNextPlaylistSentence() {
             if (!isSpeakingPlaylist || activeSpeechIndex >= chunkData.length) {
                 stopAllSpeech();
@@ -888,6 +860,7 @@
             speechSynth.speak(utterance);
         }
 
+        // Stop all speech
         function stopAllSpeech() {
             speechSynth.cancel();
             isSpeakingPlaylist = false;
